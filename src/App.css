@@ -1,4 +1,10 @@
 /* src/App.css */
+.center{
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 
 .fade-in {
   animation: fadeIn 0.5s ease-in-out forwards;

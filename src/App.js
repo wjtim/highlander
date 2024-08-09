@@ -13,6 +13,8 @@ function App() {
     const [animationClasses, setAnimationClasses] = useState({});
     const filter = new Filter();
 
+    const emojis = ['🐐', '🥈', '🥉', '😏', '🥺'];
+
     useEffect(() => {
         // Listener for currentName document
         const unsubscribeCurrentName = onSnapshot(doc(db, 'currentName', 'current'), (docSnap) => {
@@ -145,8 +147,9 @@ function App() {
     };
 
     return (
-        <div>
-            <h1>Current Name: {currentName}</h1>
+        <div className='center'>
+            <h1>Current</h1>
+            <h1>👑⛰️ {currentName} ⛰️👑</h1>
             <h2>Time: {formatDuration(duration)}</h2>
             <form onSubmit={handleSubmit}>
                 <input type="text" name="name" placeholder="Enter your name" maxLength="15" autoComplete='off' />
@@ -154,9 +157,9 @@ function App() {
             </form>
             <h2>Reigns of Terror</h2>
             <ul style={{listStyleType:'none'}} >
-                {leaderboard.map((entry) => (
+            {leaderboard.map((entry, index) => (
                     <li key={entry.id} className={animationClasses[entry.id]}>
-                        {entry.name}: {formatDuration(entry.duration)} (Signed on {formatTimestamp(entry.signedAt)})
+                        {emojis[index]}{entry.name}: {formatDuration(entry.duration)} (Signed on {formatTimestamp(entry.signedAt)})
                     </li>
                 ))}
             </ul>
