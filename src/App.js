@@ -1,7 +1,6 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { collection, doc, getDoc, getDocs, query, orderBy, limit, setDoc, addDoc, serverTimestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, orderBy, limit, setDoc, addDoc, serverTimestamp, deleteDoc, onSnapshot, where } from 'firebase/firestore';
 import Filter from 'bad-words';
 import './App.css';
 
@@ -9,56 +8,57 @@ function App() {
     const [currentName, setCurrentName] = useState('');
     const [startTime, setStartTime] = useState(null);
     const [duration, setDuration] = useState(0);
-    const [leaderboard, setLeaderboard] = useState([]);
+    const [allTimeLeaderboard, setAllTimeLeaderboard] = useState([]);
+    const [thirtyDayLeaderboard, setThirtyDayLeaderboard] = useState([]);
     const [animationClasses, setAnimationClasses] = useState({});
+    const [showReplacedAnimation, setShowReplacedAnimation] = useState(false);
     const filter = new Filter();
 
-    const emojis = ['🐐', '🥈', '🥉', '😏', '🥺'];
+    const emojisAT = ['🐐', '🥈', '🥉', '😏', '😅'];
+    const emojisTD = ['🏆','🔥','🧗','🤷','😮‍💨'];
 
     useEffect(() => {
-        // Listener for currentName document
         const unsubscribeCurrentName = onSnapshot(doc(db, 'currentName', 'current'), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                if (currentName && currentName !== data.name) {
+                    triggerReplacedAnimation();
+                }
                 setCurrentName(data.name);
                 const newStartTime = data.timestamp?.toMillis() || null;
                 setStartTime(newStartTime);
-                setDuration(0); // Reset duration to 0 when new name is set
+                setDuration(0);
             }
         });
 
-        // Listener for leaderboard collection
-        const unsubscribeLeaderboard = onSnapshot(query(collection(db, 'leaderboard'), orderBy('duration', 'desc'), limit(5)), (querySnapshot) => {
-            const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const unsubscribeAllTimeLeaderboard = onSnapshot(
+            query(collection(db, 'leaderboard'), orderBy('duration', 'desc'), limit(5)),
+            (querySnapshot) => {
+                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            // Trigger fade-out animation
-            setAnimationClasses(prevClasses => {
-                const newClasses = { ...prevClasses };
-                data.forEach(entry => {
-                    newClasses[entry.id] = 'fade-out';
-                });
-                return newClasses;
-            });
+                setAllTimeLeaderboard(data);
+            }
+        );
 
-            setTimeout(() => {
-                setLeaderboard(data);
-
-                // Trigger fade-in animation
-                setAnimationClasses(prevClasses => {
-                    const newClasses = { ...prevClasses };
-                    data.forEach(entry => {
-                        newClasses[entry.id] = 'fade-in';
-                    });
-                    return newClasses;
-                });
-            }, 500); // Match the duration of the fade-out animation
-        });
+        const unsubscribeThirtyDayLeaderboard = onSnapshot(
+            query(
+                collection(db, 'leaderboard'),
+                where('signedAt', '>=', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
+                orderBy('duration', 'desc'),
+                limit(5)
+            ),
+            (querySnapshot) => {
+                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setThirtyDayLeaderboard(data);
+            }
+        );
 
         return () => {
             unsubscribeCurrentName();
-            unsubscribeLeaderboard();
+            unsubscribeAllTimeLeaderboard();
+            unsubscribeThirtyDayLeaderboard();
         };
-    }, []);
+    }, [currentName]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -131,6 +131,13 @@ function App() {
         }
     };
 
+    const triggerReplacedAnimation = () => {
+        setShowReplacedAnimation(true);
+        setTimeout(() => {
+            setShowReplacedAnimation(false);
+        }, 2000);
+    };
+
     const formatDuration = (seconds) => {
         const days = Math.floor(seconds / (3600 * 24));
         const hours = Math.floor((seconds % (3600 * 24)) / 3600);
@@ -148,21 +155,37 @@ function App() {
 
     return (
         <div className='center'>
-            <h1>Current</h1>
-            <h1>👑⛰️ {currentName} ⛰️👑</h1>
-            <h2>Time: {formatDuration(duration)}</h2>
+            <h1>👑⛰️{currentName}⛰️👑</h1>
+            <h2>Current Reign: {formatDuration(duration)}</h2>
             <form onSubmit={handleSubmit}>
                 <input type="text" name="name" placeholder="Enter your name" maxLength="15" autoComplete='off' />
                 <button type="submit">Take the Hill</button>
             </form>
-            <h2>Reigns of Terror</h2>
-            <ul style={{listStyleType:'none'}} >
-            {leaderboard.map((entry, index) => (
+
+            <h2>All-Time Reigns</h2>
+            <ul style={{ listStyleType: "none" }}>
+                {allTimeLeaderboard.map((entry, index) => (
                     <li key={entry.id} className={animationClasses[entry.id]}>
-                        {emojis[index]}{entry.name}: {formatDuration(entry.duration)} (Signed on {formatTimestamp(entry.signedAt)})
+                        {emojisAT[index]} {entry.name}: {formatDuration(entry.duration)} (Signed on {formatTimestamp(entry.signedAt)})
                     </li>
                 ))}
             </ul>
+
+            <h2>Best of the Month</h2>
+            <ul style={{ listStyleType: "none" }}>
+                {thirtyDayLeaderboard.map((entry, index) => (
+                    <li key={entry.id} className={animationClasses[entry.id]}>
+                        {emojisTD[index]} {entry.name}: {formatDuration(entry.duration)} (Signed on {formatTimestamp(entry.signedAt)})
+                    </li>
+                ))}
+            </ul>
+
+            {showReplacedAnimation && (
+                <div className="replaced-animation">
+                    <span className="replaced-text">Replaced</span>
+                    <span className="fill-span"></span>
+                </div>
+            )}
         </div>
     );
 }
