@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, query, orderBy, limit, setDoc, addDoc, serverTimestamp, deleteDoc, onSnapshot, where } from 'firebase/firestore';
 import Filter from 'bad-words';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 function App() {
@@ -13,9 +15,6 @@ function App() {
     const [animationClasses, setAnimationClasses] = useState({});
     const [showReplacedAnimation, setShowReplacedAnimation] = useState(false);
     const filter = new Filter();
-
-    const emojisAT = ['🐐', '🥈', '🥉', '😏', '😅'];
-    const emojisTD = ['🏆','🔥','🧗','🤷','😮‍💨'];
 
     useEffect(() => {
         const unsubscribeCurrentName = onSnapshot(doc(db, 'currentName', 'current'), (docSnap) => {
@@ -78,15 +77,24 @@ function App() {
         const name = e.target.name.value.trim();
 
         if (!name) {
-            alert("Name cannot be empty.");
+            toast('Name cannot be blank', {
+                theme: "dark",
+                pauseOnHover: false
+            });
             return;
         }
         if (name.length > 15) {
-            alert("Name cannot exceed 15 characters.");
+            toast('Name cannot exceed 15 characters', {
+                theme: "dark",
+                pauseOnHover: false
+            });
             return;
         }
         if (filter.isProfane(name)) {
-            alert("Please avoid using inappropriate language.");
+            toast('Name contains profanity', {
+                theme: "dark",
+                pauseOnHover: false
+            });
             return;
         }
 
@@ -155,27 +163,28 @@ function App() {
 
     return (
         <div className='center'>
-            <h1>👑⛰️{currentName}⛰️👑</h1>
-            <h2>Current Reign: {formatDuration(duration)}</h2>
+            <h1 style={{color: 'white'}}>Current Reign: </h1>
+            <h2>{currentName}</h2>
+            <h2 style={{color: 'white'}}>{formatDuration(duration)}</h2>
             <form onSubmit={handleSubmit}>
                 <input type="text" name="name" placeholder="Enter your name" maxLength="15" autoComplete='off' />
                 <button type="submit">Take the Hill</button>
             </form>
 
-            <h2>All-Time Reigns</h2>
+            <h2 style={{color: 'white'}}>All-Time Reigns</h2>
             <ul style={{ listStyleType: "none" }}>
                 {allTimeLeaderboard.map((entry, index) => (
                     <li key={entry.id} className={animationClasses[entry.id]}>
-                        {emojisAT[index]} {entry.name}: {formatDuration(entry.duration)} (Signed on {formatTimestamp(entry.signedAt)})
+                        <strong>{entry.name}</strong>: <span style={{color: 'white'}}>{formatDuration(entry.duration)}</span> <strong>Taken On:</strong> <span style={{color: 'white'}}>{formatTimestamp(entry.signedAt)}</span>
                     </li>
                 ))}
             </ul>
 
-            <h2>Best of the Month</h2>
+            <h2 style={{color: 'white'}}>Best of the Month</h2>
             <ul style={{ listStyleType: "none" }}>
                 {thirtyDayLeaderboard.map((entry, index) => (
                     <li key={entry.id} className={animationClasses[entry.id]}>
-                        {emojisTD[index]} {entry.name}: {formatDuration(entry.duration)} (Signed on {formatTimestamp(entry.signedAt)})
+                        <strong>{entry.name}</strong>: <span style={{ color: 'white' }}>{formatDuration(entry.duration)}</span> <strong>Taken On:</strong> <span style={{ color: 'white' }}>{formatTimestamp(entry.signedAt)}</span>
                     </li>
                 ))}
             </ul>
@@ -183,9 +192,9 @@ function App() {
             {showReplacedAnimation && (
                 <div className="replaced-animation">
                     <span className="replaced-text">Replaced</span>
-                    <span className="fill-span"></span>
                 </div>
             )}
+            <ToastContainer />
         </div>
     );
 }
