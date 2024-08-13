@@ -2,7 +2,7 @@ Certainly! Below is a README template for your React application, hosted on Netl
 
 ---
 
-# 🏆 Name Leaderboard App
+# 🏆 WJTIM HIGHLANDER
 
 This is a simple web application that allows users to submit their names, which will be displayed on the site along with a live countdown showing how long the name has been displayed. The name can be replaced by another user, and a leaderboard tracks the top 5 names with the longest display times.
 
@@ -13,13 +13,12 @@ This is a simple web application that allows users to submit their names, which 
 - **Leaderboard**: Tracks the top 5 names with the longest display times.
 - **Profanity Filter**: Ensures that submitted names are appropriate.
 - **Animations**: Smooth fade-in and fade-out animations on leaderboard updates.
-- **No Empty Names**: Prevents empty name submissions and caps name length at 10 characters.
+- **No Empty Names**: Prevents empty name submissions and caps name length at 15 characters.
 
 ## 🛠️ Tech Stack
 
 - **React**: Frontend library used to build the user interface.
 - **Firebase**: Backend services for database, real-time updates, and hosting.
-- **Netlify**: Platform for hosting the application.
 
 ## 📦 Getting Started
 
@@ -31,10 +30,6 @@ This is a simple web application that allows users to submit their names, which 
 ### Installation
 
 1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/name-leaderboard-app.git
-   cd name-leaderboard-app
-   ```
 
 2. **Install dependencies**:
    ```bash
@@ -61,43 +56,9 @@ This is a simple web application that allows users to submit their names, which 
    ```
    The app will be available at `http://localhost:3000`.
 
-### Deploying to Netlify
-
-1. **Build the app**:
-   ```bash
-   npm run build
-   ```
-
-2. **Deploy on Netlify**:
-   - Create an account on [Netlify](https://www.netlify.com/).
-   - In Netlify, create a new site from Git (GitHub, GitLab, Bitbucket).
-   - Select your repository.
-   - For the build settings:
-     - **Build Command:** `npm run build`
-     - **Publish Directory:** `build`
-
-3. **Set up Environment Variables on Netlify**:
-   - Go to your site settings on Netlify.
-   - Navigate to "Environment variables" and add the Firebase configuration as key-value pairs.
-
-4. **Deploy**:
-   - Netlify will automatically deploy your site, and it will be live at a unique Netlify subdomain.
-   - Optionally, you can configure a custom domain.
-
-### Optional: Custom Redirects
-
-If using React Router or custom routing, create a `_redirects` file in the `public` folder:
-
-```
-/* /index.html 200
-```
-
-This ensures proper handling of routes by redirecting all requests to `index.html`.
-
 ## 🐛 Troubleshooting
 
 - **Timer Starts in Negative**: Ensure the timer is set using the correct timestamp from Firebase.
-- **Netlify Deployment Issues**: Verify the build and publish settings, and ensure environment variables are correctly set up.
 - **Firebase Errors**: Double-check your Firebase configuration and rules.
 
 ## 📜 License
@@ -107,8 +68,4 @@ This project is open source and available under the [MIT License](LICENSE).
 ## ✨ Acknowledgments
 
 - Built with ❤️ using React and Firebase.
-- Hosted on Netlify for seamless deployment.
 
----
-
-Feel free to customize the README as needed, especially the repository URL and any other specific details relevant to your project!
