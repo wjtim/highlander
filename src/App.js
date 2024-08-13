@@ -24,7 +24,7 @@ function App() {
                     triggerReplacedAnimation();
                 }
                 setCurrentName(data.name);
-                const newStartTime = data.timestamp?.toMillis() || null;
+                const newStartTime = data.timestamp?.toMillis() || Date.now();
                 setStartTime(newStartTime);
                 setDuration(0);
             }
