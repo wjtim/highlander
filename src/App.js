@@ -180,7 +180,7 @@ function App() {
                 ))}
             </ul>
 
-            <h2 style={{color: 'white'}}>Best of the Month</h2>
+            <h2 style={{color: 'white'}}>Recent Reigns (30 Day) </h2>
             <ul style={{ listStyleType: "none" }}>
                 {thirtyDayLeaderboard.map((entry, index) => (
                     <li key={entry.id} className={animationClasses[entry.id]}>
