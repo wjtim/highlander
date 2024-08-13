@@ -1,6 +1,3 @@
-Certainly! Below is a README template for your React application, hosted on Netlify.
-
----
 
 # 🏆 WJTIM HIGHLANDER
 
