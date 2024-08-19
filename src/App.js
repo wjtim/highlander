@@ -12,6 +12,8 @@ function App() {
     const [duration, setDuration] = useState(0);
     const [allTimeLeaderboard, setAllTimeLeaderboard] = useState([]);
     const [thirtyDayLeaderboard, setThirtyDayLeaderboard] = useState([]);
+    const [sevenDayLeaderboard, setSevenDayLeaderboard] = useState([]);
+    const [showThirtyDay, setShowThirtyDay] = useState(false); // Toggle state for leaderboards
     const [animationClasses, setAnimationClasses] = useState({});
     const [showReplacedAnimation, setShowReplacedAnimation] = useState(false);
     const filter = new Filter();
@@ -52,10 +54,24 @@ function App() {
             }
         );
 
+        const unsubscribeSevenDayLeaderboard = onSnapshot(
+            query(
+                collection(db, 'leaderboard'),
+                where('signedAt', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
+                orderBy('duration', 'desc'),
+                limit(5)
+            ),
+            (querySnapshot) => {
+                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setSevenDayLeaderboard(data);
+            }
+        );
+
         return () => {
             unsubscribeCurrentName();
             unsubscribeAllTimeLeaderboard();
             unsubscribeThirtyDayLeaderboard();
+            unsubscribeSevenDayLeaderboard();
         };
     }, [currentName]);
 
@@ -123,7 +139,33 @@ function App() {
                         await deleteDoc(doc(db, 'leaderboard', leaderboardData[i].id));
                     }
                 }
+
+                const weeklyQ = query(
+                    collection(db, 'leaderboard'),
+                    where('signedAt', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
+                    orderBy('signedAt', 'desc'),
+                    orderBy('duration', 'desc'),
+                    limit(5)
+                );
+                const weeklySnapshot = await getDocs(weeklyQ);
+                let weeklyLeaderboardData = weeklySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                if (weeklyLeaderboardData.length < 5 || duration > weeklyLeaderboardData[weeklyLeaderboardData.length - 1].duration) {
+                    const newWeeklyEntry = await addDoc(collection(db, 'leaderboard'), {
+                        name: data.name,
+                        duration: duration,
+                        signedAt: data.timestamp
+                    });
+
+                    weeklyLeaderboardData.push({ id: newWeeklyEntry.id, name: data.name, duration: duration, signedAt: data.timestamp });
+                    weeklyLeaderboardData = weeklyLeaderboardData.sort((a, b) => b.duration - a.duration).slice(0, 5);
+
+                    for (let i = 5; i < weeklyLeaderboardData.length; i++) {
+                        await deleteDoc(doc(db, 'leaderboard', weeklyLeaderboardData[i].id));
+                    }
+                }
             }
+            
 
             await setDoc(docRef, {
                 name: name,
@@ -158,7 +200,10 @@ function App() {
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return '';
         const date = timestamp.toDate();
-        return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+        return date.toLocaleDateString('en-US', {
+            month: 'short',  // Short month name (e.g., "Aug")
+            day: 'numeric',  // Day of the month (e.g., "8")
+        });
     };
 
     return (
@@ -175,20 +220,35 @@ function App() {
             <ul style={{ listStyleType: "none" }}>
                 {allTimeLeaderboard.map((entry, index) => (
                     <li key={entry.id} className={animationClasses[entry.id]}>
-                        <strong>{entry.name}</strong>: <span style={{color: 'white'}}>{formatDuration(entry.duration)}</span> <strong>Taken On:</strong> <span style={{color: 'white'}}>{formatTimestamp(entry.signedAt)}</span>
+                        {entry.name} <span style={{color: 'white'}}> {formatDuration(entry.duration)}</span> {formatTimestamp(entry.signedAt)}
                     </li>
                 ))}
             </ul>
 
+            <div>
+                <button onClick={() => setShowThirtyDay(!showThirtyDay)}>30 Day / 7 Day</button>
+            </div>
+
+            {showThirtyDay && (<div>
             <h2 style={{color: 'white'}}>Recent Reigns (30 Day) </h2>
             <ul style={{ listStyleType: "none" }}>
                 {thirtyDayLeaderboard.map((entry, index) => (
                     <li key={entry.id} className={animationClasses[entry.id]}>
-                        <strong>{entry.name}</strong>: <span style={{ color: 'white' }}>{formatDuration(entry.duration)}</span> <strong>Taken On:</strong> <span style={{ color: 'white' }}>{formatTimestamp(entry.signedAt)}</span>
+                        {entry.name} <span style={{ color: 'white' }}>{formatDuration(entry.duration)}</span> {formatTimestamp(entry.signedAt)}
                     </li>
                 ))}
             </ul>
-
+            </div>)}
+            {!showThirtyDay &&(<div>
+            <h2 style={{color: 'white'}}>Recent Reigns (7 Day) </h2>
+            <ul style={{ listStyleType: "none" }}>
+                {sevenDayLeaderboard.map((entry, index) => (
+                    <li key={entry.id} className={animationClasses[entry.id]}>
+                        {entry.name} <span style={{ color: 'white' }}>{formatDuration(entry.duration)}</span> {formatTimestamp(entry.signedAt)}
+                    </li>
+                ))}
+            </ul>
+            </div>)}
             {showReplacedAnimation && (
                 <div className="replaced-animation">
                     <span className="replaced-text">Replaced</span>
