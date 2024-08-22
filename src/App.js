@@ -125,6 +125,7 @@ function App() {
                 const querySnapshot = await getDocs(q);
                 let leaderboardData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+                let addedToLeaderboard = false;
                 if (leaderboardData.length < 5 || duration > leaderboardData[leaderboardData.length - 1].duration) {
                     const newEntry = await addDoc(collection(db, 'leaderboard'), {
                         name: data.name,
@@ -138,8 +139,9 @@ function App() {
                     for (let i = 5; i < leaderboardData.length; i++) {
                         await deleteDoc(doc(db, 'leaderboard', leaderboardData[i].id));
                     }
+                    addedToLeaderboard = true;
                 }
-
+                if (!addedToLeaderboard) {
                 const weeklyQ = query(
                     collection(db, 'leaderboard'),
                     where('signedAt', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
@@ -165,7 +167,7 @@ function App() {
                     }
                 }
             }
-            
+        }
 
             await setDoc(docRef, {
                 name: name,
