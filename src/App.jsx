@@ -213,11 +213,11 @@ function App() {
             <h1 style={{color: 'white'}}>Current Reign: </h1>
             <h2>{currentName}</h2>
             <h2 style={{color: 'white'}}>{formatDuration(duration)}</h2>
+            
             <form onSubmit={handleSubmit}>
                 <input type="text" name="name" placeholder="Enter your name" maxLength="15" autoComplete='off' />
                 <button type="submit">Take the Hill</button>
             </form>
-
             <h2 style={{color: 'white'}}>All-Time Reigns</h2>
             <ul style={{ listStyleType: "none" }}>
                 {allTimeLeaderboard.map((entry, index) => (
