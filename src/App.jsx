@@ -43,26 +43,32 @@ function App() {
 
         const unsubscribeThirtyDayLeaderboard = onSnapshot(
             query(
-                collection(db, 'leaderboard'),
+                collection(db, 'recentLeaderboard'),
                 where('signedAt', '>=', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
-                orderBy('duration', 'desc'),
-                limit(5)
+                orderBy('signedAt', 'desc'),
+                limit(50)
             ),
             (querySnapshot) => {
-                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const data = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .sort((a, b) => b.duration - a.duration)
+                    .slice(0, 5);
                 setThirtyDayLeaderboard(data);
             }
         );
 
         const unsubscribeSevenDayLeaderboard = onSnapshot(
             query(
-                collection(db, 'leaderboard'),
+                collection(db, 'recentLeaderboard'),
                 where('signedAt', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
-                orderBy('duration', 'desc'),
-                limit(5)
+                orderBy('signedAt', 'desc'),
+                limit(50)
             ),
             (querySnapshot) => {
-                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const data = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .sort((a, b) => b.duration - a.duration)
+                    .slice(0, 5);
                 setSevenDayLeaderboard(data);
             }
         );
@@ -125,48 +131,50 @@ function App() {
                 const querySnapshot = await getDocs(q);
                 let leaderboardData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                let addedToLeaderboard = false;
-                if (leaderboardData.length < 5 || duration > leaderboardData[leaderboardData.length - 1].duration) {
+                // Check all-time top 5
+                const qualifiesAllTime = leaderboardData.length < 5 || duration > leaderboardData[leaderboardData.length - 1].duration;
+                if (qualifiesAllTime) {
                     const newEntry = await addDoc(collection(db, 'leaderboard'), {
                         name: data.name,
                         duration: duration,
-                        signedAt: data.timestamp
+                        signedAt: data.timestamp,
                     });
 
-                    leaderboardData.push({ id: newEntry.id, name: data.name, duration: duration, signedAt: data.timestamp });
-                    leaderboardData = leaderboardData.sort((a, b) => b.duration - a.duration).slice(0, 5);
-
+                    leaderboardData.push({ id: newEntry.id, name: data.name, duration: duration });
+                    leaderboardData.sort((a, b) => b.duration - a.duration);
                     for (let i = 5; i < leaderboardData.length; i++) {
                         await deleteDoc(doc(db, 'leaderboard', leaderboardData[i].id));
                     }
-                    addedToLeaderboard = true;
                 }
-                if (!addedToLeaderboard) {
-                const weeklyQ = query(
-                    collection(db, 'leaderboard'),
-                    where('signedAt', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
-                    orderBy('signedAt', 'desc'),
-                    orderBy('duration', 'desc'),
-                    limit(5)
-                );
-                const weeklySnapshot = await getDocs(weeklyQ);
-                let weeklyLeaderboardData = weeklySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                if (weeklyLeaderboardData.length < 5 || duration > weeklyLeaderboardData[weeklyLeaderboardData.length - 1].duration) {
-                    const newWeeklyEntry = await addDoc(collection(db, 'leaderboard'), {
+                // Check 30-day and 7-day recent leaderboards (separate collection, signedAt = knockoff time)
+                const cutoff30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                const cutoff7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+                const recentSnap = await getDocs(query(
+                    collection(db, 'recentLeaderboard'),
+                    where('signedAt', '>=', cutoff30),
+                    orderBy('signedAt', 'desc'),
+                    limit(50)
+                ));
+                const recentData = recentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                const top30 = [...recentData].sort((a, b) => b.duration - a.duration).slice(0, 5);
+                const top7 = recentData
+                    .filter(e => e.signedAt?.toMillis() >= cutoff7.getTime())
+                    .sort((a, b) => b.duration - a.duration)
+                    .slice(0, 5);
+
+                const qualifies30 = top30.length < 5 || duration > top30[top30.length - 1].duration;
+                const qualifies7 = top7.length < 5 || duration > top7[top7.length - 1].duration;
+
+                if (qualifies30 || qualifies7) {
+                    await addDoc(collection(db, 'recentLeaderboard'), {
                         name: data.name,
                         duration: duration,
-                        signedAt: data.timestamp
+                        signedAt: serverTimestamp(),
                     });
-
-                    weeklyLeaderboardData.push({ id: newWeeklyEntry.id, name: data.name, duration: duration, signedAt: data.timestamp });
-                    weeklyLeaderboardData = weeklyLeaderboardData.sort((a, b) => b.duration - a.duration).slice(0, 5);
-
-                    for (let i = 5; i < weeklyLeaderboardData.length; i++) {
-                        await deleteDoc(doc(db, 'leaderboard', weeklyLeaderboardData[i].id));
-                    }
                 }
-            }
         }
 
             await setDoc(docRef, {
